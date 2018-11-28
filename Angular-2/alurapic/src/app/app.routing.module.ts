@@ -5,12 +5,16 @@ import { PhotoListComponent } from './photos/photo-list/photo-list.component';
 import { PhotoFormComponent } from './photos/photo-form/photo-form.component';
 import { PhotoListResolver } from './photos/photo-list/photo-list.resolver';
 import { NotFoundComponent } from './errors/not-found/not-found.component';
-import { SignInComponent } from './home/signin/signin.component';
 
 const routes: Routes = [
+    {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'home'
+    },
     { 
-        path: '', 
-        component: SignInComponent
+        path: 'home',
+        loadChildren: './home/home.module#HomeModule'
     },
     { 
         path: 'user/:userName', 
