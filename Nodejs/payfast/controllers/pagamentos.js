@@ -2,10 +2,45 @@ const PAGAMENTO_CRIADO = "CRIADO";
 const PAGAMENTO_CONFIRMADO = "CONFIRMADO";
 const PAGAMENTO_CANCELADO = "CANCELADO";
 
+var logger = require('../servicos/logger.js');
+
 module.exports = function(app) {
+
     app.get('/pagamentos', function(req, res) {
         console.log('Recebida requisição de teste');
         res.send('OK');
+    });
+
+    app.get('/pagamentos/pagamento/:id', function(req, res) {
+        var id = req.params.id;
+        console.log('consultando pagamento: '+id);
+        logger.info('consultando pagamento: '+id);
+
+        //primeiro consulta no cache
+        var memcachedClient = app.servicos.memcachedClient();
+        memcachedClient.get('pagamento-'+id, function(erro, retorno) {
+            if(erro || !retorno) {
+                console.log('MISS - Chave '+id+' não encontrada');
+                var connection = app.persistencia.connectionFactory();
+                var pagamentoDao = new app.persistencia.PagamentoDao(connection);
+
+                pagamentoDao.buscaPorId(id, function(erro, resultado) {
+                    if(erro) {
+                        console.log('erro ao consultar o banco' + erro);
+                        res.status(500).send(erro);
+                        return;
+                    }
+
+                    console.log('pagamento encontrado: ' + JSON.stringify(resultado));
+                    res.json(resultado);
+                    return;
+                });
+            } else {
+                console.log('HIT - valor: '+JSON.stringify(retorno));
+                res.json(retorno);
+                return
+            }
+        });
     });
 
 
@@ -15,7 +50,6 @@ module.exports = function(app) {
         req.assert("pagamento.valor", "Valor é obrigatório e deve ser um decimal").notEmpty().isFloat();
 
         var erros = req.validationErrors();
-
         if(erros) {
             console.log('erros de validação encontrados');
             res.status(400).send(erros);
@@ -37,6 +71,12 @@ module.exports = function(app) {
             } else {
                 pagamento.id = result.insertId;
                 console.log('pagamento criado: ' + result);
+
+                //Inserindo no cache - chave + pagamento
+                var memcachedClient = app.servicos.memcachedClient();
+                memcachedClient.set('pagamento-'+pagamento.id, pagamento, 300000, function(erro) {
+                        console.log('Nova chave adicionada ao cache: pagamento-'+pagamento.id);
+                    });
 
                 if(pagamento.forma_de_pagamento == 'cartao') {
                     var cartao = req.body["cartao"];

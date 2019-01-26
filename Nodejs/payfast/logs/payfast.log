@@ -1,0 +1,4 @@
+{"message":"consultando pagamento: 20","level":"info"}
+{"message":"::1 - - [25/Jan/2019:20:24:45 +0000] \"GET /pagamentos/pagamento/20 HTTP/1.1\" 200 154\n","level":"info"}
+{"message":"consultando pagamento: 20","level":"info"}
+{"message":"::1 - - [25/Jan/2019:22:02:26 +0000] \"GET /pagamentos/pagamento/20 HTTP/1.1\" 200 154\n","level":"info"}
